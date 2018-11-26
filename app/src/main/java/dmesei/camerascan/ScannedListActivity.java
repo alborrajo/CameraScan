@@ -37,10 +37,11 @@ public class ScannedListActivity extends AppCompatActivity {
         scannedListView.setLayoutManager(llm);
 
         scannedList = new ArrayList<ScannedItem>();
+        ScannedItem.fallbackBitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca); // Set fallback Bitmap
 
         //TODO: Cambiar por lectura de la BD/almacenamiento
         scannedList.add(new ScannedItem(
-                BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca),
+                "dhwaudihwui",
                 new Concept[]{
                         new Concept("Gato 1", .92),
                         new Concept("Concepto 2", .90),
@@ -49,7 +50,7 @@ public class ScannedListActivity extends AppCompatActivity {
                 }
         ));
         scannedList.add(new ScannedItem(
-                BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca),
+                "fjdfhdsu",
                 new Concept[]{
                         new Concept("Gato 2", .92),
                         new Concept("adsadsa", .90),
@@ -58,7 +59,7 @@ public class ScannedListActivity extends AppCompatActivity {
                 }
         ));
         scannedList.add(new ScannedItem(
-                BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca),
+                "fjhfueshufes",
                 new Concept[]{
                         new Concept("Gato 3", .92),
                         new Concept("dale a tu cuerpo", .90),
@@ -84,7 +85,7 @@ public class ScannedListActivity extends AppCompatActivity {
     public void onFloatingActionButtonClick() { //+ Button
         //TODO: Llamar a lo de abrir camara/galeria y hacer toda la liada
         scannedList.add(new ScannedItem(
-                BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca),
+                "dsadskaidsk",
                 new Concept[]{
                         new Concept("Gato Extra", .92),
                         new Concept("aaa", .90),
