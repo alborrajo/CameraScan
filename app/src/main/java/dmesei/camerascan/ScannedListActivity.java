@@ -28,9 +28,8 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import dmesei.camerascan.Concept.Concept;
 import dmesei.camerascan.Scanned.ScannedItem;
@@ -61,11 +60,9 @@ public class ScannedListActivity extends AppCompatActivity {
 
             //Create list to be assigned to the view
         scannedList = new ArrayList<ScannedItem>();
-        ScannedItem.fallbackBitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca); // Set fallback Bitmap
 
             //Set adapter for the list
         scannedItemAdapter = new ScannedItemAdapter(scannedList);
-
         scannedListView.setAdapter(scannedItemAdapter);
 
 
@@ -80,7 +77,7 @@ public class ScannedListActivity extends AppCompatActivity {
             public void onClick(View view) {onFloatingActionButtonClick();}
         });
     }
-
+/*
    public void onPause(){
         super.onPause();
         final SharedPreferences prefs = this.getPreferences(MODE_PRIVATE);
@@ -109,7 +106,7 @@ public class ScannedListActivity extends AppCompatActivity {
         }
 
     }
-
+*/
 
     public void onFloatingActionButtonClick() { //+ Button
         // Abrir cámara
@@ -182,6 +179,7 @@ public class ScannedListActivity extends AppCompatActivity {
 
             scannedList.add(newItem);
             scannedItemAdapter.notifyDataSetChanged();
+
         }
     }
 
