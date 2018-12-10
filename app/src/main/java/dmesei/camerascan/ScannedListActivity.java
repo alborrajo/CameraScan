@@ -1,13 +1,17 @@
 package dmesei.camerascan;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -38,6 +42,7 @@ import dmesei.camerascan.Scanned.ScannedItemAdapter;
 public class ScannedListActivity extends AppCompatActivity {
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
+    static int MY_PERMISSIONS_REQUEST;
 
     private String imagePath;
 
@@ -76,6 +81,26 @@ public class ScannedListActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {onFloatingActionButtonClick();}
         });
+
+
+        //Permiso
+        if (ContextCompat.checkSelfPermission(ScannedListActivity.this,
+                Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(ScannedListActivity.this,
+                    Manifest.permission.CAMERA)) {
+
+            } else {
+
+                ActivityCompat.requestPermissions(ScannedListActivity.this,
+                        new String[]{Manifest.permission.CAMERA},
+                        MY_PERMISSIONS_REQUEST);
+
+
+            }
+        }
+
+
     }
 
    public void onPause(){
@@ -87,8 +112,6 @@ public class ScannedListActivity extends AppCompatActivity {
        String json = gson.toJson(scannedList);
         editor.putString("lista",json);
         editor.apply();
-
-        Log.d("DEBUG PAUSE", json);
     }
 
     public void onResume() {
@@ -112,6 +135,22 @@ public class ScannedListActivity extends AppCompatActivity {
 
 
     public void onFloatingActionButtonClick() { //+ Button
+        //Permiso camara
+        if (ContextCompat.checkSelfPermission(ScannedListActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(ScannedListActivity.this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+
+            } else {
+
+                ActivityCompat.requestPermissions(ScannedListActivity.this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_REQUEST);
+
+
+            }
+        }
         // Abrir cámara
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) { //Si se puede abrir cámara
