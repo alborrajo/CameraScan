@@ -41,7 +41,7 @@ public class ScannedListActivity extends AppCompatActivity {
 
     private String imagePath;
 
-    List scannedList;
+    List<ScannedItem> scannedList;
     ScannedItemAdapter scannedItemAdapter;
 
     @Override
@@ -77,7 +77,7 @@ public class ScannedListActivity extends AppCompatActivity {
             public void onClick(View view) {onFloatingActionButtonClick();}
         });
     }
-/*
+
    public void onPause(){
         super.onPause();
         final SharedPreferences prefs = this.getPreferences(MODE_PRIVATE);
@@ -87,26 +87,29 @@ public class ScannedListActivity extends AppCompatActivity {
        String json = gson.toJson(scannedList);
         editor.putString("lista",json);
         editor.apply();
+
+        Log.d("DEBUG PAUSE", json);
     }
 
-    public void onResume(){
+    public void onResume() {
         super.onResume();
         final SharedPreferences prefs = this.getPreferences(MODE_PRIVATE);
         Gson gson = new Gson();
         String json = prefs.getString("lista", "");
 
-        Log.d("AAA","AAAAA");
+        Log.d("DEBUG RESUME", json);
 
-        Type type = new TypeToken<ArrayList<ScannedItem>>(){}.getType();
-        ArrayList<ScannedItem> elementos = gson.fromJson(json, type);
+        ArrayList<ScannedItem> elementos = gson.fromJson(json, new TypeToken<List<ScannedItem>>(){}.getType());
 
-        if (elementos!= null){
-            scannedList.clear();
-            scannedList = elementos;
+        scannedList.clear();
+        for(ScannedItem elemento: elementos) {
+            scannedList.add(elemento);
         }
 
+        scannedItemAdapter.notifyDataSetChanged();
+
     }
-*/
+
 
     public void onFloatingActionButtonClick() { //+ Button
         // Abrir cámara
@@ -179,6 +182,14 @@ public class ScannedListActivity extends AppCompatActivity {
 
             scannedList.add(newItem);
             scannedItemAdapter.notifyDataSetChanged();
+
+            // APAÑO CUTRE /!\
+            // Resulta que se ejecuta primero el onActivityResult
+            // y luego el onResume
+            // Por tanto se añadía el item a la lista Y LUEGO se cargaba la lista de las preferencias
+            // Por ello nunca se guardaban los elementos nuevos a la lista
+            // Solución cutre: Llamar al onPause al volver de la actividad
+            onPause(); //TODO Buscar forma mejor
 
         }
     }
