@@ -31,7 +31,12 @@ public class ScannedItemDetailActivity extends AppCompatActivity {
         // Fill view with scanned item details
             // Image and title
         CollapsingToolbarLayout collapsingToolbarLayout = findViewById(R.id.toolbar_layout);
-        collapsingToolbarLayout.setBackground(new BitmapDrawable(getResources(), scannedItem.bitmap)); // Image
+        collapsingToolbarLayout.setBackground( // Image
+                new BitmapDrawable(
+                        getResources(),
+                        scannedItem.getBitmap(256,256)
+                )
+        );
         collapsingToolbarLayout.setTitle(scannedItem.concepts[0].name); // Title
 
             // Concepts

@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import dmesei.camerascan.Concept.Concept;
 
@@ -11,15 +12,31 @@ public class ScannedItem implements Parcelable {
 
     public static Bitmap fallbackBitmap;
 
-    public Bitmap bitmap;
     public String path;
     public Concept[] concepts;
 
     public ScannedItem(String p, Concept[] c) {
         path = p;
         concepts = c;
-        bitmap = BitmapFactory.decodeFile(path);
-        if(bitmap == null) {bitmap = fallbackBitmap;} //Fallback
+    }
+
+    public Bitmap getBitmap() {
+        Bitmap bitmap = BitmapFactory.decodeFile(path);
+        if(bitmap == null) {
+            return fallbackBitmap;
+        }
+
+        return bitmap;
+    }
+
+    public Bitmap getBitmap(int sizeX, int sizeY) {
+        Bitmap tmpBitmap = BitmapFactory.decodeFile(path);
+        if(tmpBitmap == null) {
+            tmpBitmap = fallbackBitmap;
+        }
+
+        //Generate thumbnail from bitmap
+        return Bitmap.createScaledBitmap(tmpBitmap, sizeX, sizeY, true);
     }
 
     // PARCELABLE

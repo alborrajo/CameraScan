@@ -1,8 +1,13 @@
 package dmesei.camerascan;
 
+import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -10,8 +15,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import dmesei.camerascan.Concept.Concept;
@@ -19,6 +30,10 @@ import dmesei.camerascan.Scanned.ScannedItem;
 import dmesei.camerascan.Scanned.ScannedItemAdapter;
 
 public class ScannedListActivity extends AppCompatActivity {
+
+    static final int REQUEST_IMAGE_CAPTURE = 1;
+
+    private String imagePath;
 
     List scannedList;
     ScannedItemAdapter scannedItemAdapter;
@@ -33,44 +48,20 @@ public class ScannedListActivity extends AppCompatActivity {
         // List
         RecyclerView scannedListView = findViewById(R.id.scannedListView);
 
+            //LayoutManager
         RecyclerView.LayoutManager llm = new LinearLayoutManager(this);
         scannedListView.setLayoutManager(llm);
 
+            //Create list to be assigned to the view
         scannedList = new ArrayList<ScannedItem>();
-        ScannedItem.fallbackBitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca); // Set fallback Bitmap
 
-        //TODO: Cambiar por lectura de la BD/almacenamiento
-        scannedList.add(new ScannedItem(
-                "dhwaudihwui",
-                new Concept[]{
-                        new Concept("Gato 1", .92),
-                        new Concept("Concepto 2", .90),
-                        new Concept("Concepto 3", .82),
-                        new Concept("Concepto 4", .72),
-                }
-        ));
-        scannedList.add(new ScannedItem(
-                "fjdfhdsu",
-                new Concept[]{
-                        new Concept("Gato 2", .92),
-                        new Concept("adsadsa", .90),
-                        new Concept("dsadsab", .82),
-                        new Concept("cdsads", .72),
-                }
-        ));
-        scannedList.add(new ScannedItem(
-                "fjhfueshufes",
-                new Concept[]{
-                        new Concept("Gato 3", .92),
-                        new Concept("dale a tu cuerpo", .90),
-                        new Concept("alegria macarena", .82),
-                        new Concept("eeee macarena", .72),
-                }
-        ));
-
+            //Set adapter for the list
         scannedItemAdapter = new ScannedItemAdapter(scannedList);
-
         scannedListView.setAdapter(scannedItemAdapter);
+
+
+        // Set fallback icon for every list element
+        ScannedItem.fallbackBitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca);
 
 
         // + Button
@@ -83,17 +74,35 @@ public class ScannedListActivity extends AppCompatActivity {
 
 
     public void onFloatingActionButtonClick() { //+ Button
-        //TODO: Llamar a lo de abrir camara/galeria y hacer toda la liada
-        scannedList.add(new ScannedItem(
-                "dsadskaidsk",
-                new Concept[]{
-                        new Concept("Gato Extra", .92),
-                        new Concept("aaa", .90),
-                        new Concept("aaa", .82),
-                        new Concept("aay", .72),
-                }
-        ));
-        scannedItemAdapter.notifyDataSetChanged();
+        // Abrir cámara
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) { //Si se puede abrir cámara
+            // Crear fichero donde se guardará la imagen
+            try {
+                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                String imageFileName = "JPEG_" + timeStamp + "_";
+                File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+
+                File imageFile = File.createTempFile(
+                        imageFileName,  /* prefix */
+                        ".jpg",  /* suffix */
+                        storageDir      /* directory */
+                );
+
+                // File path
+                imagePath = imageFile.getAbsolutePath();
+
+                Uri photoURI = FileProvider.getUriForFile(this, "com.example.android.fileprovider", imageFile);
+
+
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+
+            } catch(IOException e) {
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
+
     }
 
     @Override
@@ -118,6 +127,24 @@ public class ScannedListActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Vuelta de obtener una imagen de la cámara
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            ScannedItem newItem = new ScannedItem(
+                    imagePath,
+                    new Concept[]{
+                            new Concept("Probando 1", 0.95),
+                            new Concept("Probando 2", 0.90),
+                            new Concept("Probando 3", 0.8),
+                    }
+            );
+
+            scannedList.add(newItem);
+            scannedItemAdapter.notifyDataSetChanged();
+        }
     }
 
 }

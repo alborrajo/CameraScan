@@ -4,15 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_margin="8sp"
     android:orientation="horizontal">
 
     <ImageView
         android:id="@+id/scannedItemImage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="64sp"
+        android:layout_height="64sp"
         android:contentDescription="scannedItem"
-        android:maxWidth="@android:dimen/thumbnail_width"
-        android:maxHeight="@android:dimen/thumbnail_height"
+        android:cropToPadding="true"
         tools:srcCompat="@tools:sample/avatars[11]" />
 
     <TextView

@@ -10,7 +10,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.Arrays;
 import java.util.List;
 
 import dmesei.camerascan.R;
@@ -41,12 +40,17 @@ public class ScannedItemAdapter extends RecyclerView.Adapter<ScannedItemAdapter.
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        final ScannedItem scannedItem = scannedItemList.get(i);
-
         View v = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.scanned_item_layout, viewGroup, false);
+        return new ViewHolder(v);
+    }
 
-        v.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
+        final int index = scannedItemList.size()-1 - i; //Reverse order
+        final ScannedItem scannedItem = scannedItemList.get(index);
+
+        viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // Start detail view activity
@@ -56,13 +60,7 @@ public class ScannedItemAdapter extends RecyclerView.Adapter<ScannedItemAdapter.
             }
         });
 
-        return new ViewHolder(v);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
-        ScannedItem scannedItem = scannedItemList.get(i);
-        viewHolder.imageView.setImageBitmap(scannedItem.bitmap);
+        viewHolder.imageView.setImageBitmap(scannedItem.getBitmap(64,64));
         viewHolder.textView.setText(scannedItem.concepts[0].name);
     }
 

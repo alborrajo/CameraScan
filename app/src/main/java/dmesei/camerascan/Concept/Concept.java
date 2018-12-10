@@ -7,9 +7,9 @@ public class Concept implements Parcelable {
     public String name;
     public double percentage;
 
-    public Concept(String n, double p) {
-        name = n;
-        percentage = p;
+    public Concept(String name, double percentage) {
+        this.name = name;
+        this.percentage = percentage;
     }
 
     protected Concept(Parcel in) {
