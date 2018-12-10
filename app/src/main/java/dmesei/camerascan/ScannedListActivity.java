@@ -1,6 +1,7 @@
 package dmesei.camerascan;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,11 +21,16 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import dmesei.camerascan.Concept.Concept;
 import dmesei.camerascan.Scanned.ScannedItem;
@@ -54,9 +61,11 @@ public class ScannedListActivity extends AppCompatActivity {
 
             //Create list to be assigned to the view
         scannedList = new ArrayList<ScannedItem>();
+        ScannedItem.fallbackBitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca); // Set fallback Bitmap
 
             //Set adapter for the list
         scannedItemAdapter = new ScannedItemAdapter(scannedList);
+
         scannedListView.setAdapter(scannedItemAdapter);
 
 
@@ -70,6 +79,35 @@ public class ScannedListActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {onFloatingActionButtonClick();}
         });
+    }
+
+   public void onPause(){
+        super.onPause();
+        final SharedPreferences prefs = this.getPreferences(MODE_PRIVATE);
+        final SharedPreferences.Editor editor = prefs.edit();
+
+       Gson gson = new Gson();
+       String json = gson.toJson(scannedList);
+        editor.putString("lista",json);
+        editor.apply();
+    }
+
+    public void onResume(){
+        super.onResume();
+        final SharedPreferences prefs = this.getPreferences(MODE_PRIVATE);
+        Gson gson = new Gson();
+        String json = prefs.getString("lista", "");
+
+        Log.d("AAA","AAAAA");
+
+        Type type = new TypeToken<ArrayList<ScannedItem>>(){}.getType();
+        ArrayList<ScannedItem> elementos = gson.fromJson(json, type);
+
+        if (elementos!= null){
+            scannedList.clear();
+            scannedList = elementos;
+        }
+
     }
 
 
