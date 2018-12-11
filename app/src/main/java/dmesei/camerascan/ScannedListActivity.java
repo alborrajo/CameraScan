@@ -76,6 +76,12 @@ public class ScannedListActivity extends AppCompatActivity {
             //Create list to be assigned to the view
         scannedList = new ArrayList<ScannedItem>();
 
+            //Load state from preferences
+        List<ScannedItem> elementos = StateManager.loadState(this);
+        for(ScannedItem elemento: elementos) {
+            scannedList.add(elemento);
+        }
+
             //Set adapter for the list
         scannedItemAdapter = new ScannedItemAdapter(scannedList);
         scannedListView.setAdapter(scannedItemAdapter);
@@ -114,37 +120,6 @@ public class ScannedListActivity extends AppCompatActivity {
         clarifaiClient = new ClarifaiBuilder(getResources().getString(R.string.clarifai_api_key)).buildSync();
 
     }
-
-   public void onPause(){
-        super.onPause();
-        final SharedPreferences prefs = this.getPreferences(MODE_PRIVATE);
-        final SharedPreferences.Editor editor = prefs.edit();
-
-       Gson gson = new Gson();
-       String json = gson.toJson(scannedList);
-        editor.putString("lista",json);
-        editor.apply();
-    }
-
-    public void onResume() {
-        super.onResume();
-        final SharedPreferences prefs = this.getPreferences(MODE_PRIVATE);
-        Gson gson = new Gson();
-        String json = prefs.getString("lista", "");
-
-        Log.d("DEBUG RESUME", json);
-
-        ArrayList<ScannedItem> elementos = gson.fromJson(json, new TypeToken<List<ScannedItem>>(){}.getType());
-
-        scannedList.clear();
-        for(ScannedItem elemento: elementos) {
-            scannedList.add(elemento);
-        }
-
-        scannedItemAdapter.notifyDataSetChanged();
-
-    }
-
 
     public void onFloatingActionButtonClick() { //+ Button
         //Permiso camara
@@ -270,13 +245,8 @@ public class ScannedListActivity extends AppCompatActivity {
                         scannedList.add(newItem);
                         scannedItemAdapter.notifyDataSetChanged();
 
-                        // APAÑO CUTRE /!\
-                        // Resulta que se ejecuta primero el onActivityResult
-                        // y luego el onResume
-                        // Por tanto se añadía el item a la lista Y LUEGO se cargaba la lista de las preferencias
-                        // Por ello nunca se guardaban los elementos nuevos a la lista
-                        // Solución cutre: Llamar al onPause al volver de la actividad
-                        onPause(); //TODO Buscar forma mejor
+                        // Guardar estado
+                        StateManager.saveState(ScannedListActivity.this, scannedList);
                     }
 
                 }
