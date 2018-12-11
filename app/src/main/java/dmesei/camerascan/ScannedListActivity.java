@@ -1,11 +1,13 @@
 package dmesei.camerascan;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -36,7 +38,10 @@ import java.util.List;
 import clarifai2.api.ClarifaiBuilder;
 import clarifai2.api.ClarifaiClient;
 import clarifai2.api.ClarifaiResponse;
+import clarifai2.api.request.ClarifaiRequest;
+import clarifai2.dto.input.ClarifaiImage;
 import clarifai2.dto.input.ClarifaiInput;
+import clarifai2.dto.model.ConceptModel;
 import clarifai2.dto.model.output.ClarifaiOutput;
 import dmesei.camerascan.Concept.Concept;
 import dmesei.camerascan.Scanned.ScannedItem;
@@ -214,54 +219,69 @@ public class ScannedListActivity extends AppCompatActivity {
     }
 
 
+    @SuppressLint("StaticFieldLeak")
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Vuelta de obtener una imagen de la cámara
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
 
+            // Mostrar mensaje de Analizando
+            Toast.makeText(ScannedListActivity.this, R.string.analyzing, Toast.LENGTH_LONG).show();
+
             // Enviar petición
-            ClarifaiResponse<List<ClarifaiOutput<clarifai2.dto.prediction.Concept>>> response;
-            response = clarifaiClient.getDefaultModels().generalModel().predict()
-                    .withInputs(ClarifaiInput.forImage(new File(imagePath)))
-                    .executeSync(); //TODO Ver como podría ser el executeAsync
+            new AsyncTask<Void, Void, ClarifaiResponse<List<ClarifaiOutput<clarifai2.dto.prediction.Concept>>>>() {
+                @Override
+                protected ClarifaiResponse<List<ClarifaiOutput<clarifai2.dto.prediction.Concept>>> doInBackground(Void... params) {
+                    // The default Clarifai model that identifies concepts in images
+                    final ConceptModel generalModel = clarifaiClient.getDefaultModels().generalModel();
 
-            // Leer respuesta
-            List<clarifai2.dto.prediction.Concept> responseClarifaiConcepts = response.get().get(0).data(); // Obtener lista de Conceptos de Clarifai de la respuesta
-            Concept[] concepts = new Concept[responseClarifaiConcepts.size()]; // Crear array de objetos Concept
+                    // Use this model to predict, with the image that the user just selected as the input
+                    return generalModel.predict()
+                            .withInputs(ClarifaiInput.forImage(new File(imagePath)))
+                            .executeSync();
+                }
 
-            // Convertir lista de Concepts de Clarifai a array de Concepts nuestros
-            for(int i=0; i < concepts.length; i++) {
-                concepts[i] = new Concept(responseClarifaiConcepts.get(i));
-            }
-
-            // Crear objeto ScannedItem con los datos
-            ScannedItem newItem = new ScannedItem(imagePath, concepts);
-
-            scannedList.add(newItem);
-            scannedItemAdapter.notifyDataSetChanged();
-
-
-            // TODO Borrar
-            /*ScannedItem newItem = new ScannedItem(
-                    imagePath,
-                    new Concept[]{
-                            new Concept("Probando 1", 0.95),
-                            new Concept("Probando 2", 0.90),
-                            new Concept("Probando 3", 0.8),
+                @Override
+                protected void onPostExecute(ClarifaiResponse<List<ClarifaiOutput<clarifai2.dto.prediction.Concept>>> response) {
+                    if (!response.isSuccessful()) {
+                        Toast.makeText(ScannedListActivity.this, getResources().getString(R.string.analyzing_error), Toast.LENGTH_LONG).show();
+                        return;
                     }
-            );
+                    final List<ClarifaiOutput<clarifai2.dto.prediction.Concept>> predictions = response.get();
+                    if (predictions.isEmpty()) {
+                        Toast.makeText(ScannedListActivity.this, getResources().getString(R.string.analyzing_error), Toast.LENGTH_LONG).show();
+                        return;
+                    } else {
 
-            scannedList.add(newItem);
-            scannedItemAdapter.notifyDataSetChanged();
-            */
-            // TODO Borrar
+                        // Mostrar mensaje de Respuesta
+                        Toast.makeText(ScannedListActivity.this, R.string.analyzing_success, Toast.LENGTH_LONG).show();
 
-            // APAÑO CUTRE /!\
-            // Resulta que se ejecuta primero el onActivityResult
-            // y luego el onResume
-            // Por tanto se añadía el item a la lista Y LUEGO se cargaba la lista de las preferencias
-            // Por ello nunca se guardaban los elementos nuevos a la lista
-            // Solución cutre: Llamar al onPause al volver de la actividad
-            onPause(); //TODO Buscar forma mejor
+                        // Leer respuesta
+                        List<clarifai2.dto.prediction.Concept> responseClarifaiConcepts = predictions.get(0).data(); // Obtener lista de Conceptos de Clarifai de la respuesta
+                        Concept[] concepts = new Concept[responseClarifaiConcepts.size()]; // Crear array de objetos Concept
+
+                        // Convertir lista de Concepts de Clarifai a array de Concepts nuestros
+                        for(int i=0; i < concepts.length; i++) {
+                            concepts[i] = new Concept(responseClarifaiConcepts.get(i));
+                        }
+
+                        // Crear objeto ScannedItem con los datos
+                        ScannedItem newItem = new ScannedItem(imagePath, concepts);
+
+                        scannedList.add(newItem);
+                        scannedItemAdapter.notifyDataSetChanged();
+
+                        // APAÑO CUTRE /!\
+                        // Resulta que se ejecuta primero el onActivityResult
+                        // y luego el onResume
+                        // Por tanto se añadía el item a la lista Y LUEGO se cargaba la lista de las preferencias
+                        // Por ello nunca se guardaban los elementos nuevos a la lista
+                        // Solución cutre: Llamar al onPause al volver de la actividad
+                        onPause(); //TODO Buscar forma mejor
+                    }
+
+                }
+            }.execute();
+
 
         }
     }

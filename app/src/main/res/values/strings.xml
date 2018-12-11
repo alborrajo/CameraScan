@@ -94,4 +94,7 @@
     </string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_borrar">BORRAR</string>
+    <string name="analyzing">Analizando...</string>
+    <string name="analyzing_error">Error analizando la imagen</string>
+    <string name="analyzing_success">Imagen analizada con éxito</string>
 </resources>
