@@ -2,6 +2,7 @@
     <string name="app_name">CameraScan</string>
     <string name="clear_scanned_list">Limpiar lista</string>
     <string name="title_activity_scanned_item_detail">ScannedItemDetailActivity</string>
+    <string name="clarifai_api_key"></string>
     <string name="large_text">
         "Material is the metaphor.\n\n"
 

@@ -12,6 +12,11 @@ public class Concept implements Parcelable {
         this.percentage = percentage;
     }
 
+    public Concept(clarifai2.dto.prediction.Concept clarifaiConcept) {
+        this.name = clarifaiConcept.name();
+        this.percentage = clarifaiConcept.value();
+    }
+
     protected Concept(Parcel in) {
         name = in.readString();
         percentage = in.readDouble();

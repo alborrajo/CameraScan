@@ -29,12 +29,15 @@ import java.text.SimpleDateFormat;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
+import clarifai2.api.ClarifaiBuilder;
+import clarifai2.api.ClarifaiClient;
+import clarifai2.api.ClarifaiResponse;
+import clarifai2.dto.input.ClarifaiInput;
+import clarifai2.dto.model.output.ClarifaiOutput;
 import dmesei.camerascan.Concept.Concept;
 import dmesei.camerascan.Scanned.ScannedItem;
 import dmesei.camerascan.Scanned.ScannedItemAdapter;
@@ -48,6 +51,8 @@ public class ScannedListActivity extends AppCompatActivity {
 
     List<ScannedItem> scannedList;
     ScannedItemAdapter scannedItemAdapter;
+
+    ClarifaiClient clarifaiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +105,8 @@ public class ScannedListActivity extends AppCompatActivity {
             }
         }
 
+        // INICIAR CLARIFAI
+        clarifaiClient = new ClarifaiBuilder(getResources().getString(R.string.clarifai_api_key)).buildSync();
 
     }
 
@@ -210,7 +217,31 @@ public class ScannedListActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Vuelta de obtener una imagen de la cámara
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            ScannedItem newItem = new ScannedItem(
+
+            // Enviar petición
+            ClarifaiResponse<List<ClarifaiOutput<clarifai2.dto.prediction.Concept>>> response;
+            response = clarifaiClient.getDefaultModels().generalModel().predict()
+                    .withInputs(ClarifaiInput.forImage(new File(imagePath)))
+                    .executeSync(); //TODO Ver como podría ser el executeAsync
+
+            // Leer respuesta
+            List<clarifai2.dto.prediction.Concept> responseClarifaiConcepts = response.get().get(0).data(); // Obtener lista de Conceptos de Clarifai de la respuesta
+            Concept[] concepts = new Concept[responseClarifaiConcepts.size()]; // Crear array de objetos Concept
+
+            // Convertir lista de Concepts de Clarifai a array de Concepts nuestros
+            for(int i=0; i < concepts.length; i++) {
+                concepts[i] = new Concept(responseClarifaiConcepts.get(i));
+            }
+
+            // Crear objeto ScannedItem con los datos
+            ScannedItem newItem = new ScannedItem(imagePath, concepts);
+
+            scannedList.add(newItem);
+            scannedItemAdapter.notifyDataSetChanged();
+
+
+            // TODO Borrar
+            /*ScannedItem newItem = new ScannedItem(
                     imagePath,
                     new Concept[]{
                             new Concept("Probando 1", 0.95),
@@ -221,6 +252,8 @@ public class ScannedListActivity extends AppCompatActivity {
 
             scannedList.add(newItem);
             scannedItemAdapter.notifyDataSetChanged();
+            */
+            // TODO Borrar
 
             // APAÑO CUTRE /!\
             // Resulta que se ejecuta primero el onActivityResult
