@@ -74,7 +74,7 @@ public class ScannedListActivity extends AppCompatActivity {
         scannedListView.setLayoutManager(llm);
 
             //Create list to be assigned to the view
-        scannedList = new ArrayList<ScannedItem>();
+        scannedList = new ArrayList<>();
 
             //Load state from preferences
         List<ScannedItem> elementos = StateManager.loadState(this);

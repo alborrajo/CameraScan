@@ -1,1 +1,1 @@
-include ':app', ':clarifai-android-sdk-v1.0.1'
+include ':app', ':clarifai-android-sdk-v1.0.1', ':clarifai-android-sdk'
