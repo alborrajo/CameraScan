@@ -34,7 +34,7 @@ public class ScannedItemDetailActivity extends AppCompatActivity {
         collapsingToolbarLayout.setBackground( // Image
                 new BitmapDrawable(
                         getResources(),
-                        scannedItem.getBitmap(256,256)
+                        scannedItem.getBitmapThumbnail()
                 )
         );
         collapsingToolbarLayout.setTitle(scannedItem.concepts[0].name); // Title

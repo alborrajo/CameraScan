@@ -20,7 +20,10 @@ public class ScannedItem implements Parcelable {
         concepts = c;
     }
 
+    private Bitmap bitmap;
     public Bitmap getBitmap() {
+        if(bitmap != null) {return bitmap;}
+
         Bitmap bitmap = BitmapFactory.decodeFile(path);
         if(bitmap == null) {
             return fallbackBitmap;
@@ -29,14 +32,17 @@ public class ScannedItem implements Parcelable {
         return bitmap;
     }
 
-    public Bitmap getBitmap(int sizeX, int sizeY) {
+    private Bitmap bitmapThumbnail;
+    public Bitmap getBitmapThumbnail() {
+        if(bitmapThumbnail != null) {return bitmapThumbnail;}
+
         Bitmap tmpBitmap = BitmapFactory.decodeFile(path);
         if(tmpBitmap == null) {
             tmpBitmap = fallbackBitmap;
         }
 
         //Generate thumbnail from bitmap
-        return Bitmap.createScaledBitmap(tmpBitmap, sizeX, sizeY, true);
+        return bitmapThumbnail = Bitmap.createScaledBitmap(tmpBitmap, 64, 64, true);
     }
 
     // PARCELABLE

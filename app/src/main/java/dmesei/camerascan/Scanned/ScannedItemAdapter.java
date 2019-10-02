@@ -60,7 +60,7 @@ public class ScannedItemAdapter extends RecyclerView.Adapter<ScannedItemAdapter.
             }
         });
 
-        viewHolder.imageView.setImageBitmap(scannedItem.getBitmap(64,64));
+        viewHolder.imageView.setImageBitmap(scannedItem.getBitmapThumbnail());
         viewHolder.textView.setText(scannedItem.concepts[0].name);
     }
 
