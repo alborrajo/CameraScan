@@ -8,14 +8,19 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import dmesei.camerascan.R;
 import dmesei.camerascan.ScannedItemDetailActivity;
@@ -23,12 +28,15 @@ import dmesei.camerascan.ScannedItemDetailActivity;
 public class ScannedItemAdapter extends RecyclerView.Adapter<ScannedItemAdapter.ViewHolder> {
 
     private List<ScannedItem> scannedItemList;
-    private List<Bitmap> loadedThumbnails;
+    private Map<ScannedItem, Bitmap> loadedThumbnails;
 
     private LazyLoadCallback lazyLoadCallback;
     private OnItemClickListener onItemClickListener;
+    private OnCreateContextMenuListener onCreateContextMenuListener;
 
     public Bitmap fallbackBitmap;
+
+    public int currentPosition; // For Context Menu
 
     //View holder
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -45,15 +53,19 @@ public class ScannedItemAdapter extends RecyclerView.Adapter<ScannedItemAdapter.
     //Constructor
     public ScannedItemAdapter(List<ScannedItem> scannedItemList) {
         this.scannedItemList = scannedItemList;
-        this.loadedThumbnails = new ArrayList<>(scannedItemList.size());
-    }
-
-    public void setLazyLoadCallback(LazyLoadCallback lazyLoadCallback) {
-        this.lazyLoadCallback = lazyLoadCallback;
+        this.loadedThumbnails = new WeakHashMap<>(scannedItemList.size());
     }
 
     public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
         this.onItemClickListener = onItemClickListener;
+    }
+
+    public void setOnCreateContextMenuListener(OnCreateContextMenuListener onCreateContextMenuListener) {
+        this.onCreateContextMenuListener = onCreateContextMenuListener;
+    }
+
+    public void setLazyLoadCallback(LazyLoadCallback lazyLoadCallback) {
+        this.lazyLoadCallback = lazyLoadCallback;
     }
 
     @NonNull
@@ -69,29 +81,31 @@ public class ScannedItemAdapter extends RecyclerView.Adapter<ScannedItemAdapter.
         final ScannedItem scannedItem = scannedItemList.get(index);
 
         // Set callbacks for each item
-        viewHolder.itemView.setOnClickListener((View view) -> {
-            onItemClickListener.onClick(viewHolder.itemView, scannedItem);
+        viewHolder.itemView.setOnClickListener((View view) ->
+            onItemClickListener.onClick(viewHolder.itemView, scannedItem)
+        );
+
+        viewHolder.itemView.setOnCreateContextMenuListener((ContextMenu menu, View view, ContextMenu.ContextMenuInfo contextMenuInfo) -> {
+            currentPosition = index;
+            onCreateContextMenuListener.onCreateContextMenu(menu, view, contextMenuInfo, scannedItem);
         });
 
 
-        // Expand list if necessary
-        for(int ltSize=loadedThumbnails.size(); ltSize <= scannedItemList.size(); ltSize++) {loadedThumbnails.add(null);}
-
         // Lazy load image
-        if(loadedThumbnails.get(index) == null) {
-            // Use lazy loading only if the callback is set
-            // If it isn't, load synchronously
+        if(loadedThumbnails.get(scannedItem) == null) {
+            // If the callback is set: Use lazy loading
+            // If it isn't: Load synchronously
             if(lazyLoadCallback == null) {
-                Bitmap loadedBitmap = scannedItem.getBitmapWithSize(64, 64);
+                Bitmap loadedBitmap = scannedItem.getBitmapWithSize(viewHolder.imageView.getWidth(), viewHolder.imageView.getHeight());
                 if(loadedBitmap == null) {loadedBitmap = fallbackBitmap;} // Permanently set fallback if the image cant be found
-                loadedThumbnails.set(index, loadedBitmap);
+                loadedThumbnails.put(scannedItem, loadedBitmap);
                 viewHolder.imageView.setImageBitmap(loadedBitmap);
             } else {
                 new LazyLoadScannedItem(index, scannedItem, lazyLoadCallback).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 viewHolder.imageView.setImageBitmap(fallbackBitmap); // Temporarily use the fallback bitmap
             }
         } else {
-            viewHolder.imageView.setImageBitmap(loadedThumbnails.get(index));
+            viewHolder.imageView.setImageBitmap(loadedThumbnails.get(scannedItem));
         }
 
         viewHolder.textView.setText(scannedItem.concepts[0].name);
@@ -103,9 +117,12 @@ public class ScannedItemAdapter extends RecyclerView.Adapter<ScannedItemAdapter.
         return scannedItemList.size();
     }
 
-
     public interface OnItemClickListener {
         void onClick(View view, ScannedItem scannedItem);
+    }
+
+    public interface OnCreateContextMenuListener {
+        boolean onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo contextMenuInfo, ScannedItem scannedItem);
     }
 
     public interface LazyLoadCallback {
@@ -128,8 +145,8 @@ public class ScannedItemAdapter extends RecyclerView.Adapter<ScannedItemAdapter.
         protected Void doInBackground(Void... voids) {
             Bitmap loadedBitmap = scannedItem.getBitmapWithSize(64, 64);
 
-            if(loadedBitmap == null) {loadedThumbnails.set(index, fallbackBitmap);} // Permanently set fallback if the image cant be found
-            else {loadedThumbnails.set(index, loadedBitmap);}
+            if(loadedBitmap == null) {loadedThumbnails.put(scannedItem, fallbackBitmap);} // Permanently set fallback if the image cant be found
+            else {loadedThumbnails.put(scannedItem, loadedBitmap);}
 
             return null;
         }

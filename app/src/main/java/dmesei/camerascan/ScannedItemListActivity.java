@@ -3,7 +3,6 @@ package dmesei.camerascan;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -19,17 +18,18 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,8 +38,6 @@ import java.util.List;
 import clarifai2.api.ClarifaiBuilder;
 import clarifai2.api.ClarifaiClient;
 import clarifai2.api.ClarifaiResponse;
-import clarifai2.api.request.ClarifaiRequest;
-import clarifai2.dto.input.ClarifaiImage;
 import clarifai2.dto.input.ClarifaiInput;
 import clarifai2.dto.model.ConceptModel;
 import clarifai2.dto.model.output.ClarifaiOutput;
@@ -47,7 +45,7 @@ import dmesei.camerascan.Concept.Concept;
 import dmesei.camerascan.Scanned.ScannedItem;
 import dmesei.camerascan.Scanned.ScannedItemAdapter;
 
-public class ScannedListActivity extends AppCompatActivity {
+public class ScannedItemListActivity extends AppCompatActivity {
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static int MY_PERMISSIONS_REQUEST;
@@ -91,13 +89,18 @@ public class ScannedListActivity extends AppCompatActivity {
         scannedItemAdapter.setLazyLoadCallback((int index) ->
             scannedItemAdapter.notifyItemChanged(index)
         );
-        scannedItemAdapter.setOnItemClickListener((View view, final ScannedItem scannedItem) ->{
+        scannedItemAdapter.setOnItemClickListener((View view, final ScannedItem scannedItem) -> {
             // Start detail view activity
             Intent detailIntent = new Intent(view.getContext(), ScannedItemDetailActivity.class);
             detailIntent.putExtra("scannedItem",scannedItem); // Put scannedItem as extra
             view.getContext().startActivity(detailIntent);
         });
+        scannedItemAdapter.setOnCreateContextMenuListener((menu, view, contextMenuInfo, scannedItem) -> {
+           new MenuInflater(view.getContext()).inflate(R.menu.menu_scanned_item, menu);
+           return true;
+        });
 
+        registerForContextMenu(scannedListView);
         scannedListView.setAdapter(scannedItemAdapter);
 
         // Set fallback icon for every list element
@@ -106,22 +109,19 @@ public class ScannedListActivity extends AppCompatActivity {
 
         // + Button
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {onFloatingActionButtonClick();}
-        });
+        fab.setOnClickListener(view -> onFloatingActionButtonClick());
 
 
         //Permiso
-        if (ContextCompat.checkSelfPermission(ScannedListActivity.this,
+        if (ContextCompat.checkSelfPermission(ScannedItemListActivity.this,
                 Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(ScannedListActivity.this,
+            if (ActivityCompat.shouldShowRequestPermissionRationale(ScannedItemListActivity.this,
                     Manifest.permission.CAMERA)) {
 
             } else {
 
-                ActivityCompat.requestPermissions(ScannedListActivity.this,
+                ActivityCompat.requestPermissions(ScannedItemListActivity.this,
                         new String[]{Manifest.permission.CAMERA},
                         MY_PERMISSIONS_REQUEST);
 
@@ -136,21 +136,15 @@ public class ScannedListActivity extends AppCompatActivity {
 
     public void onFloatingActionButtonClick() { //+ Button
         //Permiso camara
-        if (ContextCompat.checkSelfPermission(ScannedListActivity.this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(ScannedListActivity.this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+        if (ContextCompat.checkSelfPermission(ScannedItemListActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+            && !ActivityCompat.shouldShowRequestPermissionRationale(ScannedItemListActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
 
-            } else {
-
-                ActivityCompat.requestPermissions(ScannedListActivity.this,
+                ActivityCompat.requestPermissions(ScannedItemListActivity.this,
                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         MY_PERMISSIONS_REQUEST);
-
-
-            }
         }
+
+
         // Abrir cámara
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) { //Si se puede abrir cámara
@@ -199,12 +193,23 @@ public class ScannedListActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.clear_scanned_list) {
             scannedList.clear();
-            StateManager.saveState(ScannedListActivity.this, scannedList); // Borrar tambien de la "BD"
+            StateManager.saveState(ScannedItemListActivity.this, scannedList); // Borrar tambien de la "BD"
             scannedItemAdapter.notifyDataSetChanged();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.delete:
+                int scannedItemIndex = scannedItemAdapter.currentPosition;
+                scannedList.remove(scannedItemIndex);
+                scannedItemAdapter.notifyItemRemoved(scannedItemIndex);
+        }
+        return super.onContextItemSelected(item);
     }
 
 
@@ -214,7 +219,7 @@ public class ScannedListActivity extends AppCompatActivity {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
 
             // Mostrar mensaje de Analizando
-            Toast.makeText(ScannedListActivity.this, R.string.analyzing, Toast.LENGTH_LONG).show();
+            Toast.makeText(ScannedItemListActivity.this, R.string.analyzing, Toast.LENGTH_LONG).show();
 
             // Enviar petición
             new AsyncTask<Void, Void, ClarifaiResponse<List<ClarifaiOutput<clarifai2.dto.prediction.Concept>>>>() {
@@ -232,17 +237,17 @@ public class ScannedListActivity extends AppCompatActivity {
                 @Override
                 protected void onPostExecute(ClarifaiResponse<List<ClarifaiOutput<clarifai2.dto.prediction.Concept>>> response) {
                     if (!response.isSuccessful()) {
-                        Toast.makeText(ScannedListActivity.this, getResources().getString(R.string.analyzing_error), Toast.LENGTH_LONG).show();
+                        Toast.makeText(ScannedItemListActivity.this, getResources().getString(R.string.analyzing_error), Toast.LENGTH_LONG).show();
                         return;
                     }
                     final List<ClarifaiOutput<clarifai2.dto.prediction.Concept>> predictions = response.get();
                     if (predictions.isEmpty()) {
-                        Toast.makeText(ScannedListActivity.this, getResources().getString(R.string.analyzing_error), Toast.LENGTH_LONG).show();
+                        Toast.makeText(ScannedItemListActivity.this, getResources().getString(R.string.analyzing_error), Toast.LENGTH_LONG).show();
                         return;
                     } else {
 
                         // Mostrar mensaje de Respuesta
-                        Toast.makeText(ScannedListActivity.this, R.string.analyzing_success, Toast.LENGTH_LONG).show();
+                        Toast.makeText(ScannedItemListActivity.this, R.string.analyzing_success, Toast.LENGTH_LONG).show();
 
                         // Leer respuesta
                         List<clarifai2.dto.prediction.Concept> responseClarifaiConcepts = predictions.get(0).data(); // Obtener lista de Conceptos de Clarifai de la respuesta
@@ -257,10 +262,10 @@ public class ScannedListActivity extends AppCompatActivity {
                         ScannedItem newItem = new ScannedItem(imagePath, concepts);
 
                         scannedList.add(newItem);
-                        scannedItemAdapter.notifyDataSetChanged();
+                        scannedItemAdapter.notifyItemInserted(scannedList.size()-1);
 
                         // Guardar estado
-                        StateManager.saveState(ScannedListActivity.this, scannedList);
+                        StateManager.saveState(ScannedItemListActivity.this, scannedList);
                     }
 
                 }

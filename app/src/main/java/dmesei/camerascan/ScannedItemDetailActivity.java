@@ -1,5 +1,6 @@
 package dmesei.camerascan;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -46,6 +47,14 @@ public class ScannedItemDetailActivity extends AppCompatActivity {
         // Set toolbar X button action (Press back)
         toolbar.setNavigationOnClickListener((View view) -> this.onBackPressed());
 
+        // Show image in fullscreen when clicking on the toolbar
+        collapsingToolbarLayoutImageView.setOnClickListener(view -> {
+            // Start scanned item image activity
+            Intent imageIntent = new Intent(view.getContext(), ScannedItemImageActivity.class);
+            imageIntent.putExtra("scannedItem",scannedItem); // Put scannedItem as extra
+            view.getContext().startActivity(imageIntent);
+        });
+
 
             // Concepts
         RecyclerView conceptListView = findViewById(R.id.conceptListView);
@@ -59,6 +68,7 @@ public class ScannedItemDetailActivity extends AppCompatActivity {
 
         // Load scanned item image when the toolbar layout loads
         collapsingToolbarLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @SuppressLint("StaticFieldLeak")
             @Override
             public void onGlobalLayout() {
                 // Remove the listener to avoid it getting called over and over
@@ -66,7 +76,7 @@ public class ScannedItemDetailActivity extends AppCompatActivity {
                 collapsingToolbarLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 
                 // Get toolbar width in pixels
-                int toolbarWidth = collapsingToolbarLayout.getWidth();
+                final int toolbarWidth = collapsingToolbarLayout.getWidth();
 
                 // Load bitmap asynchronously
                 new AsyncTask<Void, Void, Void>() {
