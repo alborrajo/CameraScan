@@ -8,12 +8,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.text.DecimalFormat;
+
 import dmesei.camerascan.R;
 
 public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ViewHolder> {
 
-    private Concept[] conceptArray;
+    private DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
+
+
+    private Concept[] conceptArray;
 
     //View holder
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -44,7 +49,7 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
         Concept concept = conceptArray[i];
         viewHolder.nameTextView.setText(concept.name);
-        viewHolder.percentageTextView.setText(Double.toString(concept.percentage));
+        viewHolder.percentageTextView.setText(decimalFormat.format(concept.percentage*100)+"%");
     }
 
     @Override

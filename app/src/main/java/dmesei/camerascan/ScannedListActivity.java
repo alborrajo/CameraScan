@@ -70,7 +70,9 @@ public class ScannedListActivity extends AppCompatActivity {
         RecyclerView scannedListView = findViewById(R.id.scannedListView);
 
             //LayoutManager
-        RecyclerView.LayoutManager llm = new LinearLayoutManager(this);
+        LinearLayoutManager llm = new LinearLayoutManager(this);
+        llm.setReverseLayout(true); // Reverse order
+        llm.setStackFromEnd(true); // Reverse order and start from top
         scannedListView.setLayoutManager(llm);
 
             //Create list to be assigned to the view
@@ -84,11 +86,22 @@ public class ScannedListActivity extends AppCompatActivity {
 
             //Set adapter for the list
         scannedItemAdapter = new ScannedItemAdapter(scannedList);
+
+            //Set callbacks
+        scannedItemAdapter.setLazyLoadCallback((int index) ->
+            scannedItemAdapter.notifyItemChanged(index)
+        );
+        scannedItemAdapter.setOnItemClickListener((View view, final ScannedItem scannedItem) ->{
+            // Start detail view activity
+            Intent detailIntent = new Intent(view.getContext(), ScannedItemDetailActivity.class);
+            detailIntent.putExtra("scannedItem",scannedItem); // Put scannedItem as extra
+            view.getContext().startActivity(detailIntent);
+        });
+
         scannedListView.setAdapter(scannedItemAdapter);
 
-
         // Set fallback icon for every list element
-        ScannedItem.fallbackBitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.cuaca);
+        scannedItemAdapter.fallbackBitmap = BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher);
 
 
         // + Button
@@ -185,7 +198,8 @@ public class ScannedListActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.clear_scanned_list) {
-            scannedList.clear(); //TODO: Borrar tambien de la BD o almacenamiento, o donde sea
+            scannedList.clear();
+            StateManager.saveState(ScannedListActivity.this, scannedList); // Borrar tambien de la "BD"
             scannedItemAdapter.notifyDataSetChanged();
             return true;
         }

@@ -1,7 +1,9 @@
 package dmesei.camerascan.Scanned;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
@@ -9,8 +11,6 @@ import android.util.Log;
 import dmesei.camerascan.Concept.Concept;
 
 public class ScannedItem implements Parcelable {
-
-    public static Bitmap fallbackBitmap;
 
     public String path;
     public Concept[] concepts;
@@ -20,30 +20,55 @@ public class ScannedItem implements Parcelable {
         concepts = c;
     }
 
-    private Bitmap bitmap;
-    public Bitmap getBitmap() {
-        if(bitmap != null) {return bitmap;}
-
-        Bitmap bitmap = BitmapFactory.decodeFile(path);
-        if(bitmap == null) {
-            return fallbackBitmap;
-        }
-
-        return bitmap;
+    public Bitmap getFullBitmap() {
+        return BitmapFactory.decodeFile(path);
     }
 
-    private Bitmap bitmapThumbnail;
-    public Bitmap getBitmapThumbnail() {
-        if(bitmapThumbnail != null) {return bitmapThumbnail;}
+    public Bitmap getBitmapWithSize(int width, int height) {
+        BitmapFactory.Options bfOptions = new BitmapFactory.Options();
 
-        Bitmap tmpBitmap = BitmapFactory.decodeFile(path);
-        if(tmpBitmap == null) {
-            tmpBitmap = fallbackBitmap;
+        // Get image size
+        bfOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(path, bfOptions);
+
+        // Get appropriate sample size
+        bfOptions.inSampleSize = calculateInSampleSize(bfOptions, width, height);
+
+        // Get image in sample size
+        bfOptions.inJustDecodeBounds = false;
+
+        return BitmapFactory.decodeFile(path, bfOptions);
+    }
+
+    // Image utils
+    public static int calculateInSampleSize(
+            BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
         }
 
-        //Generate thumbnail from bitmap
-        return bitmapThumbnail = Bitmap.createScaledBitmap(tmpBitmap, 64, 64, true);
+        return inSampleSize;
     }
+
+
+
+
+
+
 
     // PARCELABLE
     protected ScannedItem(Parcel in) {

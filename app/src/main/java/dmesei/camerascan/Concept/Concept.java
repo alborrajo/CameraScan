@@ -3,7 +3,7 @@ package dmesei.camerascan.Concept;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Concept implements Parcelable {
+public class Concept implements Parcelable{
     public String name;
     public double percentage;
 
@@ -17,6 +17,11 @@ public class Concept implements Parcelable {
         this.percentage = clarifaiConcept.value();
     }
 
+
+
+
+
+    // PARCELABLE
     protected Concept(Parcel in) {
         name = in.readString();
         percentage = in.readDouble();
